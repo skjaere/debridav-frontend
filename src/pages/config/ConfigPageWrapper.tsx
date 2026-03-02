@@ -1,5 +1,6 @@
 import { ConfigGroupPage } from '../../components/config/ConfigGroupPage'
 import { useConfig } from '../../hooks/useConfig'
+import { useConfigTest } from '../../hooks/useConfigTest'
 import { CONFIG_GROUPS } from '../../lib/constants'
 
 interface ConfigPageWrapperProps {
@@ -8,6 +9,7 @@ interface ConfigPageWrapperProps {
 
 export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
   const { getByGroup, loading, updateProperty, resetProperty } = useConfig()
+  const { isTestable, testingPrefix, testPrefix } = useConfigTest()
   const group = CONFIG_GROUPS.find(g => g.key === groupKey)!
   const properties = getByGroup(groupKey)
 
@@ -18,6 +20,9 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
       loading={loading}
       onSave={updateProperty}
       onReset={resetProperty}
+      isTestable={isTestable}
+      testingPrefix={testingPrefix}
+      onTest={testPrefix}
     />
   )
 }

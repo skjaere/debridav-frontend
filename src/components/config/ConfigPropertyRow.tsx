@@ -11,9 +11,10 @@ interface ConfigPropertyRowProps {
   property: ConfigProperty
   onSave: (key: string, value: string | null) => Promise<ConfigProperty>
   onReset: (key: string) => Promise<ConfigProperty>
+  onEditChange?: (key: string, value: string | null) => void
 }
 
-export function ConfigPropertyRow({ property, onSave, onReset }: ConfigPropertyRowProps) {
+export function ConfigPropertyRow({ property, onSave, onReset, onEditChange }: ConfigPropertyRowProps) {
   const isBoolean = !property.sensitive && property.type === 'BOOLEAN'
   const isNumber = !property.sensitive && (property.type === 'INT' || property.type === 'LONG')
   const displayValue = property.sensitive ? '' : (property.effectiveValue ?? '')
@@ -40,6 +41,7 @@ export function ConfigPropertyRow({ property, onSave, onReset }: ConfigPropertyR
       const valueToSave = isBoolean ? String(boolValue) : editValue
       await onSave(property.key, valueToSave)
       if (property.sensitive) setEditValue('')
+      onEditChange?.(property.key, null)
       addToast(`Saved ${shortKey}`, 'success')
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Save failed', 'error')
@@ -60,6 +62,7 @@ export function ConfigPropertyRow({ property, onSave, onReset }: ConfigPropertyR
       setEditValue(updated.sensitive ? '' : (updated.effectiveValue ?? ''))
       if (isBoolean) setBoolValue(updated.effectiveValue === 'true')
       setConfirmReset(false)
+      onEditChange?.(property.key, null)
       addToast(`Reset ${shortKey} to default`, 'success')
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Reset failed', 'error')
@@ -104,14 +107,14 @@ export function ConfigPropertyRow({ property, onSave, onReset }: ConfigPropertyR
           {property.sensitive ? (
             <SensitiveField
               value={editValue}
-              onChange={setEditValue}
+              onChange={v => { setEditValue(v); onEditChange?.(property.key, v || null) }}
               onKeyDown={handleKeyDown}
             />
           ) : isBoolean ? (
             <div className="flex items-center gap-2 py-1.5">
               <Toggle
                 checked={boolValue}
-                onChange={setBoolValue}
+                onChange={v => { setBoolValue(v); onEditChange?.(property.key, String(v)) }}
               />
               <span className="text-sm text-drac-comment">
                 {boolValue ? 'true' : 'false'}
@@ -122,7 +125,7 @@ export function ConfigPropertyRow({ property, onSave, onReset }: ConfigPropertyR
               type={isNumber ? 'number' : 'text'}
               step={isNumber ? 1 : undefined}
               value={editValue}
-              onChange={e => setEditValue(e.target.value)}
+              onChange={e => { setEditValue(e.target.value); onEditChange?.(property.key, e.target.value) }}
               onKeyDown={handleKeyDown}
               className="w-full rounded-lg border border-drac-current bg-drac-darker px-3 py-2
                 text-sm text-drac-fg placeholder:text-drac-comment/60 outline-none
