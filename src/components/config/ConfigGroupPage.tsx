@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { ConfigPropertyRow } from './ConfigPropertyRow'
+import { CredentialPairRow } from './CredentialPairRow'
 import { VerifyButton } from './VerifyButton'
 import { Spinner } from '../ui/Spinner'
 import { Toggle } from '../ui/Toggle'
 import type { ConfigProperty, ConfigTestResult } from '../../types/config'
-import type { GroupMeta } from '../../lib/constants'
+import type { GroupMeta, CredentialPair } from '../../lib/constants'
 
 interface ConfigGroupPageProps {
   group: GroupMeta
@@ -45,6 +46,18 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
     return result
   }
 
+  const allCredentialPairs = useMemo(() => {
+    const pairs: CredentialPair[] = [...(group.credentialPairs ?? [])]
+    group.subgroups?.forEach(sub => pairs.push(...(sub.credentialPairs ?? [])))
+    return pairs
+  }, [group])
+
+  const pairedKeys = useMemo(() => {
+    const keys = new Set<string>()
+    allCredentialPairs.forEach(p => { keys.add(p.usernameKey); keys.add(p.passwordKey) })
+    return keys
+  }, [allCredentialPairs])
+
   if (loading) return <Spinner />
 
   const hasAdvanced = properties.some(p => p.advanced)
@@ -58,6 +71,25 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
       <span className="text-sm text-drac-comment">Show advanced</span>
     </div>
   )
+
+  function renderCredentialPairs(pairs: CredentialPair[]) {
+    return pairs.map(pair => {
+      const userProp = properties.find(p => p.key === pair.usernameKey)
+      const passProp = properties.find(p => p.key === pair.passwordKey)
+      if (!userProp || !passProp) return null
+      return (
+        <CredentialPairRow
+          key={pair.usernameKey}
+          label={pair.label}
+          username={userProp}
+          password={passProp}
+          onSave={onSave}
+          onReset={onReset}
+          onEditChange={handleEditChange}
+        />
+      )
+    })
+  }
 
   if (group.subgroups) {
     return (
@@ -76,8 +108,9 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
         </div>
 
         {group.subgroups.map(sub => {
-          const subProps = visibleProps.filter(p => matchesSubgroup(p.key, sub.prefixes))
-          if (subProps.length === 0) return null
+          const subProps = visibleProps.filter(p => matchesSubgroup(p.key, sub.prefixes) && !pairedKeys.has(p.key))
+          const subPairs = sub.credentialPairs ?? []
+          if (subProps.length === 0 && subPairs.length === 0) return null
           return (
             <section key={sub.key}>
               <div className="mb-3 flex items-center gap-3">
@@ -93,6 +126,7 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
                 )}
               </div>
               <div className="space-y-2">
+                {renderCredentialPairs(subPairs)}
                 {subProps.map(prop => (
                   <ConfigPropertyRow
                     key={prop.key}
@@ -135,7 +169,8 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
       </div>
 
       <div className="space-y-2">
-        {visibleProps.map(prop => (
+        {renderCredentialPairs(group.credentialPairs ?? [])}
+        {visibleProps.filter(p => !pairedKeys.has(p.key)).map(prop => (
           <ConfigPropertyRow
             key={prop.key}
             property={prop}

@@ -7,13 +7,20 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+export interface CredentialPair {
+  label: string
+  usernameKey: string
+  passwordKey: string
+}
+
 export interface GroupMeta {
   key: string
   label: string
   path: string
   icon: LucideIcon
   description: string
-  subgroups?: { key: string; label: string; prefixes: string[] }[]
+  subgroups?: { key: string; label: string; prefixes: string[]; credentialPairs?: CredentialPair[] }[]
+  credentialPairs?: CredentialPair[]
 }
 
 export const CONFIG_GROUPS: GroupMeta[] = [
@@ -57,6 +64,9 @@ export const CONFIG_GROUPS: GroupMeta[] = [
     path: '/config/webdav',
     icon: Globe,
     description: 'WebDAV authentication credentials',
+    credentialPairs: [
+      { label: 'Credentials', usernameKey: 'debridav.webdav-username', passwordKey: 'debridav.webdav-password' },
+    ],
   },
   {
     key: 'providers',
@@ -68,7 +78,14 @@ export const CONFIG_GROUPS: GroupMeta[] = [
       { key: 'premiumize', label: 'Premiumize', prefixes: ['premiumize.'] },
       { key: 'real-debrid', label: 'Real-Debrid', prefixes: ['real-debrid.'] },
       { key: 'torbox', label: 'TorBox', prefixes: ['torbox.'] },
-      { key: 'easynews', label: 'Easynews', prefixes: ['easynews.'] },
+      {
+        key: 'easynews',
+        label: 'Easynews',
+        prefixes: ['easynews.'],
+        credentialPairs: [
+          { label: 'Credentials', usernameKey: 'easynews.username', passwordKey: 'easynews.password' },
+        ],
+      },
     ],
   },
   {
