@@ -16,6 +16,28 @@ app.use(
   })
 )
 
+const WEBDAV_USER = process.env.DEBRIDAV_WEBDAV_USERNAME || ''
+const WEBDAV_PASS = process.env.DEBRIDAV_WEBDAV_PASSWORD || ''
+
+app.use(
+  '/stream',
+  createProxyMiddleware({
+    target: API_TARGET,
+    changeOrigin: true,
+    pathRewrite: { '^/stream': '' },
+    ...(WEBDAV_USER && {
+      on: {
+        proxyReq: (proxyReq) => {
+          proxyReq.setHeader(
+            'Authorization',
+            'Basic ' + Buffer.from(`${WEBDAV_USER}:${WEBDAV_PASS}`).toString('base64')
+          )
+        },
+      },
+    }),
+  })
+)
+
 app.use(express.static(path.join(__dirname, '..', 'dist')))
 
 app.get('*', (_req, res) => {

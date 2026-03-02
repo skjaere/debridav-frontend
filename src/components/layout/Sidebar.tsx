@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Github } from 'lucide-react'
 import { CONFIG_GROUPS } from '../../lib/constants'
 
 interface SidebarProps {
@@ -32,6 +32,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           Dashboard
         </NavLink>
 
+        <NavLink to="/files" className={linkClass} onClick={onNavigate}>
+          <FolderOpen className="h-4 w-4" />
+          Files
+        </NavLink>
+
         <div className="pb-1 pt-4">
           <p className="px-3 text-xs font-semibold uppercase tracking-wider text-drac-comment/60">
             Configuration
@@ -49,8 +54,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-drac-current px-5 py-3">
-        <p className="text-xs text-drac-comment/50">v1.0.0</p>
+      <div className="border-t border-drac-current px-5 py-4">
+        <a
+          href="https://github.com/skjaere/debridav"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 text-base text-drac-comment/60 hover:text-drac-cyan transition-colors"
+        >
+          <Github className="h-5 w-5" />
+          v1.0.0
+        </a>
       </div>
     </aside>
   )
