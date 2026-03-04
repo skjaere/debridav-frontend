@@ -43,7 +43,10 @@ export function useConfig() {
   }, [])
 
   const getByGroup = useCallback(
-    (group: string) => properties.filter(p => p.group === group),
+    (group: string) =>
+      properties
+        .filter(p => p.group === group)
+        .sort((a, b) => Number(a.advanced) - Number(b.advanced)),
     [properties]
   )
 

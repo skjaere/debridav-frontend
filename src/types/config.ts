@@ -81,15 +81,21 @@ export interface StreamUrl {
   expiresIn: number
 }
 
+export interface NzbImportFile {
+  path: string
+  size: number
+}
+
 export interface QueueItem {
   id: number
   name: string
   status: string
-  percentCompleted: number | null
   size: number | null
   errorMessage: string | null
   updatedAt: string | null
   createdAt: string | null
+  archiveType: string | null
+  files: NzbImportFile[] | null
 }
 
 export interface QueueStatus {

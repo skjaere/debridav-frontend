@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { LayoutDashboard, FolderOpen, Newspaper, Github } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Newspaper, Magnet, Github } from 'lucide-react'
 import { CONFIG_GROUPS } from '../../lib/constants'
 
 interface SidebarProps {
@@ -40,6 +40,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <NavLink to="/usenet" className={linkClass} onClick={onNavigate}>
           <Newspaper className="h-4 w-4" />
           Usenet
+        </NavLink>
+
+        <NavLink to="/torrents" className={linkClass} onClick={onNavigate}>
+          <Magnet className="h-4 w-4" />
+          Torrents
         </NavLink>
 
         <div className="pb-1 pt-4">

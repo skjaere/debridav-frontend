@@ -5,7 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { Spinner } from '../ui/Spinner'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
-import type { FileDetail, ProviderCacheStatus, DebridProvider } from '../../types/config'
+import type { FileDetail, ProviderCacheStatus, DebridProvider, StreamUrl } from '../../types/config'
 
 interface FileDetailModalProps {
   path: string
@@ -81,14 +81,21 @@ function statusLabel(s: ProviderCacheStatus): string {
 
 export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
   const [detail, setDetail] = useState<FileDetail | null>(null)
+  const [streamUrl, setStreamUrl] = useState<StreamUrl | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const { addToast } = useToast()
 
   useEffect(() => {
-    apiFetch<FileDetail>(`/api/v1/files/detail?path=${encodeURIComponent(path)}`)
-      .then(setDetail)
+    const fetchDetail = apiFetch<FileDetail>(`/api/v1/files/detail?path=${encodeURIComponent(path)}`)
+    const fetchStreamUrl = apiFetch<StreamUrl>(`/api/v1/files/stream-url?path=${encodeURIComponent(path)}`)
+
+    Promise.all([fetchDetail, fetchStreamUrl])
+      .then(([detailData, streamData]) => {
+        setDetail(detailData)
+        setStreamUrl(streamData)
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [path])
@@ -102,10 +109,12 @@ export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [handleEscape])
 
-  const encodedPath = path.split('/').map(seg => encodeURIComponent(seg)).join('/')
-  const streamingUrl = `${window.location.origin}/stream${encodedPath}`
+  const streamingUrl = streamUrl
+    ? `${window.location.origin}${streamUrl.url}`
+    : null
 
   const handleCopy = async () => {
+    if (!streamingUrl) return
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(streamingUrl)
@@ -128,6 +137,7 @@ export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
   }
 
   const handleDownload = () => {
+    if (!streamingUrl) return
     const a = document.createElement('a')
     a.href = streamingUrl
     a.download = detail?.name ?? ''
@@ -140,7 +150,7 @@ export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative mx-4 w-full max-w-lg rounded-xl border border-drac-current bg-drac-bg shadow-2xl"
+        className="relative mx-4 w-full max-w-2xl rounded-xl border border-drac-current bg-drac-bg shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -234,10 +244,15 @@ export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
                 <h3 className="text-sm font-medium text-drac-fg">Streaming URL</h3>
                 <div className="rounded-lg bg-drac-darker p-3 space-y-2">
                   <div className="rounded bg-drac-bg px-3 py-2 font-mono text-xs text-drac-comment break-all">
-                    {streamingUrl}
+                    {streamingUrl ?? 'Loading...'}
                   </div>
+                  {streamUrl && (
+                    <div className="text-xs text-drac-comment/60">
+                      Expires in {Math.floor(streamUrl.expiresIn / 3600)}h — works without authentication
+                    </div>
+                  )}
                   <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={handleCopy}>
+                    <Button variant="secondary" size="sm" onClick={handleCopy} disabled={!streamingUrl}>
                       {copied ? (
                         <Check className="h-3.5 w-3.5" />
                       ) : (
@@ -245,7 +260,7 @@ export function FileDetailModal({ path, onClose }: FileDetailModalProps) {
                       )}
                       {copied ? 'Copied!' : 'Copy URL'}
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={handleDownload}>
+                    <Button variant="secondary" size="sm" onClick={handleDownload} disabled={!streamingUrl}>
                       <Download className="h-3.5 w-3.5" />
                       Download
                     </Button>

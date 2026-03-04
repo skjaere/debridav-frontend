@@ -52,7 +52,7 @@ export function CredentialPairRow({ label, username, password, onSave, onReset, 
     }
     try {
       setResetting(true)
-      const [updatedUser, updatedPass] = await Promise.all([
+      const [updatedUser] = await Promise.all([
         username.hasOverride ? onReset(username.key) : Promise.resolve(username),
         password.hasOverride ? onReset(password.key) : Promise.resolve(password),
       ])

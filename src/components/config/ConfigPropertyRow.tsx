@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Save, RotateCcw } from 'lucide-react'
+import { Save, RotateCcw, Info } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Toggle } from '../ui/Toggle'
+import { DurationField, formatDuration } from './DurationField'
 import { SensitiveField } from './SensitiveField'
 import { useToast } from '../../hooks/useToast'
+import { Tooltip } from '../ui/Tooltip'
 import type { ConfigProperty } from '../../types/config'
 
 interface ConfigPropertyRowProps {
@@ -17,6 +19,7 @@ interface ConfigPropertyRowProps {
 export function ConfigPropertyRow({ property, onSave, onReset, onEditChange }: ConfigPropertyRowProps) {
   const isBoolean = !property.sensitive && property.type === 'BOOLEAN'
   const isNumber = !property.sensitive && (property.type === 'INT' || property.type === 'LONG')
+  const isDuration = !property.sensitive && property.type === 'DURATION'
   const displayValue = property.sensitive ? '' : (property.effectiveValue ?? '')
   const [editValue, setEditValue] = useState(displayValue)
   const [boolValue, setBoolValue] = useState(property.effectiveValue === 'true')
@@ -88,16 +91,22 @@ export function ConfigPropertyRow({ property, onSave, onReset, onEditChange }: C
             ) : (
               <code className="text-sm font-medium text-drac-cyan break-all">{property.key}</code>
             )}
+            {property.description && (
+              <Tooltip content={property.description}>
+                <Info className="h-3.5 w-3.5 text-drac-comment/60 hover:text-drac-cyan cursor-help transition-colors" />
+              </Tooltip>
+            )}
             {property.hasOverride && <Badge variant="override">Override</Badge>}
             {property.sensitive && <Badge variant="sensitive">Sensitive</Badge>}
           </div>
           {property.name && (
             <code className="text-xs text-drac-cyan/70 break-all">{property.key}</code>
           )}
-          <p className="text-xs text-drac-comment leading-relaxed">{property.description}</p>
           {property.defaultValue !== null && !property.sensitive && (
             <p className="mt-1 text-xs text-drac-comment/60">
-              Default: <code className="text-drac-comment">{property.defaultValue}</code>
+              Default: <code className="text-drac-comment">
+                {isDuration ? formatDuration(property.defaultValue) : property.defaultValue}
+              </code>
             </p>
           )}
         </div>
@@ -120,6 +129,12 @@ export function ConfigPropertyRow({ property, onSave, onReset, onEditChange }: C
                 {boolValue ? 'true' : 'false'}
               </span>
             </div>
+          ) : isDuration ? (
+            <DurationField
+              value={editValue}
+              onChange={v => { setEditValue(v); onEditChange?.(property.key, v) }}
+              onKeyDown={handleKeyDown}
+            />
           ) : (
             <input
               type={isNumber ? 'number' : 'text'}

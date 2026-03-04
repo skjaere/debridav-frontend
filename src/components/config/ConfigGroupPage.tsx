@@ -16,14 +16,20 @@ interface ConfigGroupPageProps {
   isTestable?: (prefix: string) => boolean
   testingPrefix?: string | null
   onTest?: (prefix: string, overrides?: Record<string, string>) => Promise<ConfigTestResult>
+  extraContent?: React.ReactNode
+  hideHeader?: boolean
+  showAdvanced?: boolean
+  onShowAdvancedChange?: (show: boolean) => void
 }
 
 function matchesSubgroup(key: string, prefixes: string[]): boolean {
   return prefixes.some(p => key.startsWith(p))
 }
 
-export function ConfigGroupPage({ group, properties, loading, onSave, onReset, isTestable, testingPrefix, onTest }: ConfigGroupPageProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+export function ConfigGroupPage({ group, properties, loading, onSave, onReset, isTestable, testingPrefix, onTest, extraContent, hideHeader, showAdvanced: controlledShowAdvanced, onShowAdvancedChange }: ConfigGroupPageProps) {
+  const [internalShowAdvanced, setInternalShowAdvanced] = useState(false)
+  const showAdvanced = controlledShowAdvanced ?? internalShowAdvanced
+  const setShowAdvanced = onShowAdvancedChange ?? setInternalShowAdvanced
   const [dirtyValues, setDirtyValues] = useState<Record<string, string>>({})
 
   const handleEditChange = useCallback((key: string, value: string | null) => {
@@ -145,28 +151,32 @@ export function ConfigGroupPage({ group, properties, loading, onSave, onReset, i
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-drac-cyan/15">
-            <Icon className="h-5 w-5 text-drac-cyan" />
+    <div className={hideHeader ? 'space-y-2' : 'max-w-4xl space-y-6'}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-drac-cyan/15">
+              <Icon className="h-5 w-5 text-drac-cyan" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-drac-fg">{group.label} Configuration</h1>
+              <p className="text-sm text-drac-comment">{group.description}</p>
+            </div>
+            {isTestable?.(group.key) && onTest && (
+              <VerifyButton
+                prefix={group.key}
+                label={group.label}
+                testing={testingPrefix === group.key}
+                onTest={onTest}
+                overrides={dirtyValues}
+              />
+            )}
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-drac-fg">{group.label} Configuration</h1>
-            <p className="text-sm text-drac-comment">{group.description}</p>
-          </div>
-          {isTestable?.(group.key) && onTest && (
-            <VerifyButton
-              prefix={group.key}
-              label={group.label}
-              testing={testingPrefix === group.key}
-              onTest={onTest}
-              overrides={dirtyValues}
-            />
-          )}
+          {advancedToggle}
         </div>
-        {advancedToggle}
-      </div>
+      )}
+
+      {extraContent}
 
       <div className="space-y-2">
         {renderCredentialPairs(group.credentialPairs ?? [])}

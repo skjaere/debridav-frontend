@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ListOrdered,
   Loader,
   Clock,
   CheckCircle,
-  XCircle,
-  AlertTriangle,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
+  Search,
 } from 'lucide-react'
 import { Spinner } from '../components/ui/Spinner'
+import { ImportDetailModal } from '../components/queue/ImportDetailModal'
 import { useUsenetQueue } from '../hooks/useUsenetQueue'
 import type { QueueItem } from '../types/config'
 
@@ -36,7 +37,7 @@ function StatusBadge({ status }: { status: string }) {
   if (status === 'COMPLETED') color = 'bg-drac-green/15 text-drac-green'
   else if (status === 'FAILED') color = 'bg-drac-red/15 text-drac-red'
   else if (status === 'ARTICLES_MISSING') color = 'bg-drac-orange/15 text-drac-orange'
-  else if (['DOWNLOADING', 'EXTRACTING', 'VERIFYING', 'REPAIRING', 'POST_PROCESSING', 'VALIDATING'].includes(status))
+  else if (['DOWNLOADING', 'EXTRACTING', 'VERIFYING', 'REPAIRING', 'POST_PROCESSING', 'VALIDATING', 'IMPORTING'].includes(status))
     color = 'bg-drac-orange/15 text-drac-orange'
   else if (['CREATED', 'QUEUED', 'CACHED'].includes(status))
     color = 'bg-drac-purple/15 text-drac-purple'
@@ -48,96 +49,147 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function ProgressBar({ percent }: { percent: number }) {
-  return (
-    <div className="h-1.5 w-24 rounded-full bg-drac-current">
-      <div
-        className="h-full rounded-full bg-drac-cyan transition-all"
-        style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
-      />
-    </div>
-  )
+type SortDir = 'asc' | 'desc'
+
+function SortIcon({ dir }: { dir: SortDir }) {
+  return dir === 'asc'
+    ? <ChevronUp className="h-3.5 w-3.5" />
+    : <ChevronDown className="h-3.5 w-3.5" />
 }
 
-function ErrorDetail({ message }: { message: string }) {
-  const [expanded, setExpanded] = useState(false)
-  const isMultiline = message.includes('\n')
-
-  return (
-    <div className="mt-2">
-      {isMultiline ? (
-        <>
-          <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-            className="flex items-center gap-1 text-xs text-drac-red/70 hover:text-drac-red transition-colors"
-          >
-            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            {expanded ? 'Hide details' : 'Show details'}
-          </button>
-          {expanded && (
-            <pre className="mt-1.5 max-h-48 overflow-auto rounded-md bg-drac-bg/50 px-3 py-2 text-xs text-drac-red/80 leading-relaxed">
-              {message}
-            </pre>
-          )}
-        </>
-      ) : (
-        <p className="text-xs text-drac-red/70">{message}</p>
-      )}
-    </div>
-  )
+function getDateValue(item: QueueItem): number {
+  const iso = item.updatedAt ?? item.createdAt
+  return iso ? new Date(iso).getTime() : 0
 }
 
-function Section({
+function QueueTable({
   title,
   icon,
   items,
   defaultOpen,
-  renderItem,
+  nameFilter,
+  onNameFilterChange,
+  dateSortDir,
+  onDateSortToggle,
+  onItemClick,
 }: {
   title: string
   icon: React.ReactNode
   items: QueueItem[]
   defaultOpen: boolean
-  renderItem: (item: QueueItem, index: number) => React.ReactNode
+  nameFilter: string
+  onNameFilterChange: (v: string) => void
+  dateSortDir: SortDir
+  onDateSortToggle: () => void
+  onItemClick: (item: QueueItem) => void
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
+  const filtered = useMemo(() => {
+    let result = items
+    if (nameFilter) {
+      const lower = nameFilter.toLowerCase()
+      result = result.filter(i => i.name.toLowerCase().includes(lower))
+    }
+    return [...result].sort((a, b) => {
+      const diff = getDateValue(a) - getDateValue(b)
+      return dateSortDir === 'asc' ? diff : -diff
+    })
+  }, [items, nameFilter, dateSortDir])
+
+  const count = nameFilter ? `${filtered.length}/${items.length}` : `${items.length}`
+
   return (
-    <div className="rounded-lg border border-drac-current bg-drac-darker">
+    <div className="overflow-hidden rounded-lg border border-drac-current bg-drac-darker">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-drac-current/30 transition-colors"
       >
-        {open ? (
-          <ChevronDown className="h-4 w-4 text-drac-comment" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-drac-comment" />
-        )}
+        {open ? <ChevronDown className="h-4 w-4 text-drac-comment" /> : <ChevronRight className="h-4 w-4 text-drac-comment" />}
         {icon}
         <span className="text-sm font-semibold text-drac-fg">{title}</span>
-        <span className="ml-auto text-xs text-drac-comment">{items.length}</span>
+        <span className="ml-auto text-xs text-drac-comment">{count}</span>
       </button>
       {open && (
-        <div className="divide-y divide-drac-current border-t border-drac-current">
-          {items.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-drac-comment">No items</div>
-          ) : (
-            items.map((item, i) => renderItem(item, i))
-          )}
+        <div className="overflow-x-auto border-t border-drac-current">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-drac-current bg-drac-current/30">
+                <th className="px-4 py-2 text-left font-medium text-drac-comment">
+                  <div className="flex items-center gap-2">
+                    <span>Name</span>
+                    <div className="relative flex-1 max-w-48">
+                      <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-drac-comment/50" />
+                      <input
+                        type="text"
+                        value={nameFilter}
+                        onChange={(e) => onNameFilterChange(e.target.value)}
+                        placeholder="Filter..."
+                        className="w-full rounded border border-drac-current bg-drac-darker py-1 pl-7 pr-2 text-xs text-drac-fg placeholder-drac-comment/40 outline-none focus:border-drac-cyan transition-colors"
+                      />
+                    </div>
+                  </div>
+                </th>
+                <th className="px-4 py-2 text-left font-medium text-drac-comment">Status</th>
+                <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Archive Type</th>
+                <th className="hidden px-4 py-2 text-right font-medium text-drac-comment sm:table-cell">Size</th>
+                <th className="px-4 py-2 text-right font-medium text-drac-comment">
+                  <button
+                    onClick={onDateSortToggle}
+                    className="inline-flex items-center gap-1 hover:text-drac-fg transition-colors cursor-pointer"
+                  >
+                    Date
+                    <SortIcon dir={dateSortDir} />
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-drac-current">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-drac-comment">
+                    {nameFilter ? 'No matching items' : 'No items'}
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(item => (
+                  <tr
+                    key={item.id}
+                    onClick={() => onItemClick(item)}
+                    className="hover:bg-drac-current/20 transition-colors cursor-pointer"
+                  >
+                    <td className="max-w-xs px-4 py-3">
+                      <p className="truncate text-drac-fg">{item.name}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={item.status} />
+                    </td>
+                    <td className="hidden px-4 py-3 text-left text-xs text-drac-comment/60 sm:table-cell">
+                      {item.archiveType ?? '—'}
+                    </td>
+                    <td className="hidden px-4 py-3 text-right text-xs text-drac-comment/60 sm:table-cell">
+                      {formatSize(item.size)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-drac-comment/60">
+                      {formatTime(item.updatedAt ?? item.createdAt)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   )
 }
 
-function HistoryIcon({ status }: { status: string }) {
-  if (status === 'COMPLETED') return <CheckCircle className="h-4 w-4 shrink-0 text-drac-green" />
-  if (status === 'ARTICLES_MISSING') return <AlertTriangle className="h-4 w-4 shrink-0 text-drac-orange" />
-  return <XCircle className="h-4 w-4 shrink-0 text-drac-red" />
-}
-
 export function QueuePanel() {
   const { queue, loading, error } = useUsenetQueue()
+  const [nameFilter, setNameFilter] = useState('')
+  const [dateSortDir, setDateSortDir] = useState<SortDir>('desc')
+  const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null)
+  const toggleSort = () => setDateSortDir(d => d === 'asc' ? 'desc' : 'asc')
 
   if (loading) return <Spinner />
   if (error) return <div className="rounded-lg bg-drac-red/10 px-4 py-3 text-sm text-drac-red">{error}</div>
@@ -145,76 +197,45 @@ export function QueuePanel() {
 
   return (
     <div className="space-y-4">
-      <Section
+      <QueueTable
         title="Processing"
         icon={<Loader className="h-4 w-4 text-drac-orange" />}
         items={queue.processing}
         defaultOpen={true}
-        renderItem={(item) => (
-          <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-            <Loader className="h-4 w-4 shrink-0 animate-spin text-drac-orange" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-drac-fg">{item.name}</p>
-              <div className="mt-1 flex items-center gap-3">
-                <StatusBadge status={item.status} />
-                {item.percentCompleted != null && (
-                  <>
-                    <ProgressBar percent={item.percentCompleted} />
-                    <span className="text-xs text-drac-comment">{item.percentCompleted}%</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
-              {formatSize(item.size)}
-            </span>
-          </div>
-        )}
+        nameFilter={nameFilter}
+        onNameFilterChange={setNameFilter}
+        dateSortDir={dateSortDir}
+        onDateSortToggle={toggleSort}
+        onItemClick={setSelectedItem}
       />
-
-      <Section
+      <QueueTable
         title="Pending"
         icon={<Clock className="h-4 w-4 text-drac-purple" />}
         items={queue.pending}
         defaultOpen={true}
-        renderItem={(item, index) => (
-          <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-drac-purple/15 text-xs font-medium text-drac-purple">
-              {index + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-drac-fg">{item.name}</p>
-              <StatusBadge status={item.status} />
-            </div>
-            <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
-              {formatSize(item.size)}
-            </span>
-          </div>
-        )}
+        nameFilter={nameFilter}
+        onNameFilterChange={setNameFilter}
+        dateSortDir={dateSortDir}
+        onDateSortToggle={toggleSort}
+        onItemClick={setSelectedItem}
       />
-
-      <Section
+      <QueueTable
         title="History"
         icon={<CheckCircle className="h-4 w-4 text-drac-green" />}
         items={queue.history}
         defaultOpen={false}
-        renderItem={(item) => (
-          <div key={item.id} className="px-4 py-3">
-            <div className="flex items-center gap-3">
-              <HistoryIcon status={item.status} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-drac-fg">{item.name}</p>
-                <StatusBadge status={item.status} />
-              </div>
-              <div className="hidden shrink-0 text-right sm:block">
-                <p className="text-xs text-drac-comment/60">{formatSize(item.size)}</p>
-                <p className="text-xs text-drac-comment/40">{formatTime(item.updatedAt)}</p>
-              </div>
-            </div>
-            {item.errorMessage && <ErrorDetail message={item.errorMessage} />}
-          </div>
-        )}
+        nameFilter={nameFilter}
+        onNameFilterChange={setNameFilter}
+        dateSortDir={dateSortDir}
+        onDateSortToggle={toggleSort}
+        onItemClick={setSelectedItem}
       />
+      {selectedItem && (
+        <ImportDetailModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   )
 }

@@ -13,6 +13,17 @@ app.use(
   createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,
+    timeout: 0,
+    proxyTimeout: 0,
+    on: {
+      error: (err, _req, res) => {
+        console.error('API proxy error:', err.message)
+        if ('writeHead' in res && !res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'text/plain' })
+        }
+        res.end('Bad Gateway')
+      },
+    },
   })
 )
 
@@ -24,17 +35,26 @@ app.use(
   createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,
+    timeout: 0,
+    proxyTimeout: 0,
     pathRewrite: { '^/stream': '' },
-    ...(WEBDAV_USER && {
-      on: {
+    on: {
+      ...(WEBDAV_USER && {
         proxyReq: (proxyReq) => {
           proxyReq.setHeader(
             'Authorization',
             'Basic ' + Buffer.from(`${WEBDAV_USER}:${WEBDAV_PASS}`).toString('base64')
           )
         },
+      }),
+      error: (err, _req, res) => {
+        console.error('Stream proxy error:', err.message)
+        if ('writeHead' in res && !res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'text/plain' })
+        }
+        res.end('Bad Gateway')
       },
-    }),
+    },
   })
 )
 

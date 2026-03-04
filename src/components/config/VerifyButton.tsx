@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Zap, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { useToast } from '../../hooks/useToast'
@@ -15,6 +15,10 @@ interface VerifyButtonProps {
 export function VerifyButton({ prefix, label, testing, onTest, overrides }: VerifyButtonProps) {
   const [lastResult, setLastResult] = useState<ConfigTestResult | null>(null)
   const { addToast } = useToast()
+
+  useEffect(() => {
+    setLastResult(null)
+  }, [prefix])
 
   async function handleClick() {
     try {
