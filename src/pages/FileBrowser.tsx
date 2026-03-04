@@ -54,7 +54,7 @@ function SortIcon({ field, activeField, dir }: { field: SortField; activeField: 
 }
 
 export function FileBrowser() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const [currentPath, setCurrentPath] = useState(searchParams.get('path') || '/')
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(true)

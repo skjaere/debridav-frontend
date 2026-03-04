@@ -45,6 +45,31 @@ npm run serve
 
 The Express server serves the built static files and proxies API requests to the backend.
 
+### Docker
+
+```bash
+docker build -t debridav-frontend .
+docker run -p 3000:3000 -e API_TARGET=http://debridav:8080 debridav-frontend
+```
+
+Docker Compose example pairing frontend with backend:
+
+```yaml
+services:
+  debridav:
+    image: ghcr.io/skjaere/debridav:latest
+    # ... backend config
+
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      API_TARGET: http://debridav:8080
+    depends_on:
+      - debridav
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |
