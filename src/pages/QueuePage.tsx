@@ -136,9 +136,90 @@ function HistoryIcon({ status }: { status: string }) {
   return <XCircle className="h-4 w-4 shrink-0 text-drac-red" />
 }
 
-export function QueuePage() {
+export function QueuePanel() {
   const { queue, loading, error } = useUsenetQueue()
 
+  if (loading) return <Spinner />
+  if (error) return <div className="rounded-lg bg-drac-red/10 px-4 py-3 text-sm text-drac-red">{error}</div>
+  if (!queue) return null
+
+  return (
+    <div className="space-y-4">
+      <Section
+        title="Processing"
+        icon={<Loader className="h-4 w-4 text-drac-orange" />}
+        items={queue.processing}
+        defaultOpen={true}
+        renderItem={(item) => (
+          <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+            <Loader className="h-4 w-4 shrink-0 animate-spin text-drac-orange" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-drac-fg">{item.name}</p>
+              <div className="mt-1 flex items-center gap-3">
+                <StatusBadge status={item.status} />
+                {item.percentCompleted != null && (
+                  <>
+                    <ProgressBar percent={item.percentCompleted} />
+                    <span className="text-xs text-drac-comment">{item.percentCompleted}%</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
+              {formatSize(item.size)}
+            </span>
+          </div>
+        )}
+      />
+
+      <Section
+        title="Pending"
+        icon={<Clock className="h-4 w-4 text-drac-purple" />}
+        items={queue.pending}
+        defaultOpen={true}
+        renderItem={(item, index) => (
+          <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-drac-purple/15 text-xs font-medium text-drac-purple">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-drac-fg">{item.name}</p>
+              <StatusBadge status={item.status} />
+            </div>
+            <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
+              {formatSize(item.size)}
+            </span>
+          </div>
+        )}
+      />
+
+      <Section
+        title="History"
+        icon={<CheckCircle className="h-4 w-4 text-drac-green" />}
+        items={queue.history}
+        defaultOpen={false}
+        renderItem={(item) => (
+          <div key={item.id} className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <HistoryIcon status={item.status} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-drac-fg">{item.name}</p>
+                <StatusBadge status={item.status} />
+              </div>
+              <div className="hidden shrink-0 text-right sm:block">
+                <p className="text-xs text-drac-comment/60">{formatSize(item.size)}</p>
+                <p className="text-xs text-drac-comment/40">{formatTime(item.updatedAt)}</p>
+              </div>
+            </div>
+            {item.errorMessage && <ErrorDetail message={item.errorMessage} />}
+          </div>
+        )}
+      />
+    </div>
+  )
+}
+
+export function QueuePage() {
   return (
     <div className="max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
@@ -150,85 +231,7 @@ export function QueuePage() {
           <p className="text-sm text-drac-comment">Monitor NZB import progress and history</p>
         </div>
       </div>
-
-      {loading ? (
-        <Spinner />
-      ) : error ? (
-        <div className="rounded-lg bg-drac-red/10 px-4 py-3 text-sm text-drac-red">{error}</div>
-      ) : queue ? (
-        <div className="space-y-4">
-          <Section
-            title="Processing"
-            icon={<Loader className="h-4 w-4 text-drac-orange" />}
-            items={queue.processing}
-            defaultOpen={true}
-            renderItem={(item) => (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                <Loader className="h-4 w-4 shrink-0 animate-spin text-drac-orange" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-drac-fg">{item.name}</p>
-                  <div className="mt-1 flex items-center gap-3">
-                    <StatusBadge status={item.status} />
-                    {item.percentCompleted != null && (
-                      <>
-                        <ProgressBar percent={item.percentCompleted} />
-                        <span className="text-xs text-drac-comment">{item.percentCompleted}%</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
-                  {formatSize(item.size)}
-                </span>
-              </div>
-            )}
-          />
-
-          <Section
-            title="Pending"
-            icon={<Clock className="h-4 w-4 text-drac-purple" />}
-            items={queue.pending}
-            defaultOpen={true}
-            renderItem={(item, index) => (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-drac-purple/15 text-xs font-medium text-drac-purple">
-                  {index + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-drac-fg">{item.name}</p>
-                  <StatusBadge status={item.status} />
-                </div>
-                <span className="hidden shrink-0 text-xs text-drac-comment/60 sm:block">
-                  {formatSize(item.size)}
-                </span>
-              </div>
-            )}
-          />
-
-          <Section
-            title="History"
-            icon={<CheckCircle className="h-4 w-4 text-drac-green" />}
-            items={queue.history}
-            defaultOpen={false}
-            renderItem={(item) => (
-              <div key={item.id} className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <HistoryIcon status={item.status} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-drac-fg">{item.name}</p>
-                    <StatusBadge status={item.status} />
-                  </div>
-                  <div className="hidden shrink-0 text-right sm:block">
-                    <p className="text-xs text-drac-comment/60">{formatSize(item.size)}</p>
-                    <p className="text-xs text-drac-comment/40">{formatTime(item.updatedAt)}</p>
-                  </div>
-                </div>
-                {item.errorMessage && <ErrorDetail message={item.errorMessage} />}
-              </div>
-            )}
-          />
-        </div>
-      ) : null}
+      <QueuePanel />
     </div>
   )
 }
