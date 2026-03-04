@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { LayoutDashboard, FolderOpen, Github } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, ListOrdered, Github } from 'lucide-react'
 import { CONFIG_GROUPS } from '../../lib/constants'
 
 interface SidebarProps {
@@ -35,6 +35,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <NavLink to="/files" className={linkClass} onClick={onNavigate}>
           <FolderOpen className="h-4 w-4" />
           Files
+        </NavLink>
+
+        <NavLink to="/queue" className={linkClass} onClick={onNavigate}>
+          <ListOrdered className="h-4 w-4" />
+          Queue
         </NavLink>
 
         <div className="pb-1 pt-4">

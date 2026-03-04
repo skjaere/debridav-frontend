@@ -28,6 +28,16 @@ export interface TestablePrefixInfo {
   label: string
 }
 
+export interface NntpPool {
+  host: string
+  port: number
+  username: string
+  password: string
+  useTls: boolean
+  maxConnections: number
+  priority: number
+}
+
 export interface FileEntry {
   name: string
   path: string
@@ -64,4 +74,26 @@ export interface FileDetail {
   fileType: FileType
   hash: string | null
   providerStatus: ProviderStatus[] | null
+}
+
+export interface StreamUrl {
+  url: string
+  expiresIn: number
+}
+
+export interface QueueItem {
+  id: number
+  name: string
+  status: string
+  percentCompleted: number | null
+  size: number | null
+  errorMessage: string | null
+  updatedAt: string | null
+  createdAt: string | null
+}
+
+export interface QueueStatus {
+  processing: QueueItem[]
+  pending: QueueItem[]
+  history: QueueItem[]
 }

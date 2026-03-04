@@ -9,6 +9,7 @@ import { ProvidersConfigPage } from '../pages/config/ProvidersConfigPage'
 import { ArrsConfigPage } from '../pages/config/ArrsConfigPage'
 import { NntpConfigPage } from '../pages/config/NntpConfigPage'
 import { FileBrowser } from '../pages/FileBrowser'
+import { QueuePage } from '../pages/QueuePage'
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardHome /> },
       { path: 'files', element: <FileBrowser /> },
+      { path: 'queue', element: <QueuePage /> },
       { path: 'config/core', element: <CoreConfigPage /> },
       { path: 'config/webdav', element: <WebdavConfigPage /> },
       { path: 'config/providers', element: <ProvidersConfigPage /> },
