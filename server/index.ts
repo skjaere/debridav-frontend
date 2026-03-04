@@ -9,10 +9,10 @@ const PORT = process.env.PORT || 3000
 const API_TARGET = process.env.API_TARGET || 'http://localhost:8080'
 
 app.use(
-  '/api',
   createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,
+    pathFilter: '/api',
     timeout: 0,
     proxyTimeout: 0,
     on: {
@@ -31,10 +31,10 @@ const WEBDAV_USER = process.env.DEBRIDAV_WEBDAV_USERNAME || ''
 const WEBDAV_PASS = process.env.DEBRIDAV_WEBDAV_PASSWORD || ''
 
 app.use(
-  '/stream',
   createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,
+    pathFilter: '/stream',
     timeout: 0,
     proxyTimeout: 0,
     pathRewrite: { '^/stream': '' },
