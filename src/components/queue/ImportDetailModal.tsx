@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { X, FolderOpen } from 'lucide-react'
-import type { QueueItem } from '../../types/config'
+import { X, FolderOpen, Loader2 } from 'lucide-react'
+import type { QueueItem, NzbImportFile } from '../../types/config'
+import { apiFetch } from '../../lib/api'
 
 function formatSize(bytes: number | null): string {
   if (bytes == null) return '—'
@@ -40,6 +41,8 @@ interface ImportDetailModalProps {
 
 export function ImportDetailModal({ item, onClose }: ImportDetailModalProps) {
   const navigate = useNavigate()
+  const [resolvedFiles, setResolvedFiles] = useState<NzbImportFile[] | null>(null)
+  const [filesLoading, setFilesLoading] = useState(false)
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -49,6 +52,20 @@ export function ImportDetailModal({ item, onClose }: ImportDetailModalProps) {
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [handleEscape])
+
+  useEffect(() => {
+    if (item.status === 'COMPLETED') {
+      setFilesLoading(true)
+      apiFetch<NzbImportFile[]>(`/api/v1/queue/${item.id}/files`)
+        .then(setResolvedFiles)
+        .catch(() => setResolvedFiles(item.files))
+        .finally(() => setFilesLoading(false))
+    } else {
+      setResolvedFiles(item.files)
+    }
+  }, [item.id, item.status, item.files])
+
+  const displayFiles = resolvedFiles ?? item.files
 
   const handleFileClick = (filePath: string) => {
     onClose()
@@ -125,14 +142,19 @@ export function ImportDetailModal({ item, onClose }: ImportDetailModalProps) {
           )}
 
           {/* Files */}
-          {item.files && item.files.length > 0 && (
+          {filesLoading ? (
+            <div className="flex items-center gap-2 text-sm text-drac-comment">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading files…</span>
+            </div>
+          ) : displayFiles && displayFiles.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-drac-fg">
-                Files ({item.files.length})
+                Files ({displayFiles.length})
               </h3>
               <div className="rounded-lg bg-drac-darker p-3">
                 <ul className="space-y-1 text-sm">
-                  {item.files.map((f, i) => (
+                  {displayFiles.map((f, i) => (
                     <li key={i}>
                       <button
                         onClick={() => handleFileClick(f.path)}
