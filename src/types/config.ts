@@ -103,3 +103,12 @@ export interface QueueStatus {
   pending: QueueItem[]
   history: QueueItem[]
 }
+
+export interface HistoryPage {
+  content: QueueItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  last: boolean
+}
