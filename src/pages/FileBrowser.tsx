@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { Folder, File, FolderOpen, ChevronRight, CornerLeftUp, ArrowUp, ArrowDown } from 'lucide-react'
+import { Folder, File, FolderOpen, ChevronRight, CornerLeftUp, ArrowUp, ArrowDown, Search } from 'lucide-react'
 import { Spinner } from '../components/ui/Spinner'
 import { FileDetailModal } from '../components/files/FileDetailModal'
 import { apiFetch } from '../lib/api'
@@ -62,11 +62,13 @@ export function FileBrowser() {
   const [detailPath, setDetailPath] = useState<string | null>(null)
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [nameFilter, setNameFilter] = useState('')
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
+    setNameFilter('')
 
     apiFetch<FileEntry[]>(`/api/v1/files?path=${encodeURIComponent(currentPath)}`)
       .then(data => {
@@ -82,10 +84,12 @@ export function FileBrowser() {
     return () => { cancelled = true }
   }, [currentPath])
 
-  const sortedEntries = useMemo(
-    () => sortEntries(entries, sortField, sortDir),
-    [entries, sortField, sortDir]
-  )
+  const sortedEntries = useMemo(() => {
+    const filtered = nameFilter
+      ? entries.filter(e => e.name.toLowerCase().includes(nameFilter.toLowerCase()))
+      : entries
+    return sortEntries(filtered, sortField, sortDir)
+  }, [entries, sortField, sortDir, nameFilter])
 
   function toggleSort(field: SortField) {
     if (sortField === field) {
@@ -158,10 +162,20 @@ export function FileBrowser() {
           {/* Column headers */}
           <div className="flex items-center gap-3 border-b border-drac-current px-4 py-2">
             <div className="w-5" /> {/* icon spacer */}
-            <div className="flex-1" onClick={() => toggleSort('name')}>
-              <span className={headerClass}>
+            <div className="flex-1 flex items-center gap-2">
+              <span className={headerClass} onClick={() => toggleSort('name')}>
                 Name <SortIcon field="name" activeField={sortField} dir={sortDir} />
               </span>
+              <div className="relative flex-1 max-w-48">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-drac-comment/50" />
+                <input
+                  type="text"
+                  value={nameFilter}
+                  onChange={(e) => setNameFilter(e.target.value)}
+                  placeholder="Filter..."
+                  className="w-full rounded border border-drac-current bg-drac-darker py-1 pl-7 pr-2 text-xs text-drac-fg placeholder-drac-comment/40 outline-none focus:border-drac-cyan transition-colors"
+                />
+              </div>
             </div>
             <div className="hidden sm:block w-24 text-right" onClick={() => toggleSort('size')}>
               <span className={`${headerClass} justify-end`}>
