@@ -112,3 +112,29 @@ export interface HistoryPage {
   totalPages: number
   last: boolean
 }
+
+export interface HealthQueueItem {
+  msgId: number
+  nzbDocumentId: number
+  nzbName: string | null
+  category: string | null
+  readCount: number
+  enqueuedAt: string | null
+  lastReadAt: string | null
+  archivedAt: string | null
+  message: string | null
+}
+
+export interface HealthQueueStatus {
+  pending: HealthQueueItem[]
+  count: number
+}
+
+export interface HealthQueueHistoryPage {
+  content: HealthQueueItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  last: boolean
+}
