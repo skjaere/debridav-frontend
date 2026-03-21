@@ -115,14 +115,16 @@ export interface HistoryPage {
 
 export interface HealthQueueItem {
   msgId: number
-  nzbDocumentId: number
-  nzbName: string | null
+  documentId: number
+  name: string | null
   category: string | null
+  type: 'NZB' | 'TORRENT'
   readCount: number
   enqueuedAt: string | null
   lastReadAt: string | null
   archivedAt: string | null
   message: string | null
+  action: string | null
 }
 
 export interface HealthQueueStatus {

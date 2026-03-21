@@ -29,6 +29,35 @@ function formatTime(iso: string | null): string {
   )
 }
 
+function TypeBadge({ type }: { type: string }) {
+  const isNzb = type === 'NZB'
+  return (
+    <span
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${
+        isNzb
+          ? 'bg-drac-purple/20 text-drac-purple'
+          : 'bg-drac-cyan/20 text-drac-cyan'
+      }`}
+    >
+      {type}
+    </span>
+  )
+}
+
+function ActionBadge({ action }: { action: string | null }) {
+  if (!action) return <span className="text-xs text-drac-comment/40">{'\u2014'}</span>
+  const colors: Record<string, string> = {
+    REPAIRED: 'bg-drac-green/20 text-drac-green',
+    DELETED: 'bg-drac-red/20 text-drac-red',
+    SKIPPED: 'bg-drac-comment/20 text-drac-comment',
+  }
+  return (
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${colors[action] ?? 'bg-drac-comment/20 text-drac-comment'}`}>
+      {action}
+    </span>
+  )
+}
+
 function Pagination({
   page,
   totalPages,
@@ -93,18 +122,22 @@ function Pagination({
   )
 }
 
+const PAGE_SIZE = 20
+
 function PendingTable({
   title,
   icon,
   items,
-  showMessage,
 }: {
   title: string
   icon: React.ReactNode
   items: HealthQueueItem[]
-  showMessage: boolean
 }) {
   const [open, setOpen] = useState(true)
+  const [page, setPage] = useState(0)
+  const colSpan = 5
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE))
+  const pageItems = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
     <div className="overflow-hidden rounded-lg border border-drac-current bg-drac-darker">
@@ -123,26 +156,27 @@ function PendingTable({
             <thead>
               <tr className="border-b border-drac-current bg-drac-current/30">
                 <th className="px-4 py-2 text-left font-medium text-drac-comment">Name</th>
+                <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Type</th>
                 <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Category</th>
                 <th className="px-4 py-2 text-right font-medium text-drac-comment">Reads</th>
-                {showMessage && (
-                  <th className="hidden px-4 py-2 text-left font-medium text-drac-comment md:table-cell">Message</th>
-                )}
                 <th className="px-4 py-2 text-right font-medium text-drac-comment">Enqueued</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-drac-current">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={showMessage ? 5 : 4} className="px-4 py-6 text-center text-sm text-drac-comment">
+                  <td colSpan={colSpan} className="px-4 py-6 text-center text-sm text-drac-comment">
                     No pending items
                   </td>
                 </tr>
               ) : (
-                items.map(item => (
-                  <tr key={item.msgId} className="hover:bg-drac-current/20 transition-colors">
+                pageItems.map(item => (
+                  <tr key={`${item.type}-${item.msgId}`} className="hover:bg-drac-current/20 transition-colors">
                     <td className="max-w-xs px-4 py-3">
-                      <p className="truncate text-drac-fg">{item.nzbName ?? `Doc #${item.nzbDocumentId}`}</p>
+                      <p className="truncate text-drac-fg">{item.name ?? `#${item.documentId}`}</p>
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      <TypeBadge type={item.type} />
                     </td>
                     <td className="hidden px-4 py-3 text-xs text-drac-comment/60 sm:table-cell">
                       {item.category ?? '\u2014'}
@@ -150,11 +184,6 @@ function PendingTable({
                     <td className="px-4 py-3 text-right text-xs text-drac-comment/60">
                       {item.readCount}
                     </td>
-                    {showMessage && (
-                      <td className="hidden max-w-xs px-4 py-3 md:table-cell">
-                        <p className="truncate text-xs text-drac-orange">{item.message ?? '\u2014'}</p>
-                      </td>
-                    )}
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-drac-comment/60">
                       {formatTime(item.enqueuedAt)}
                     </td>
@@ -163,6 +192,7 @@ function PendingTable({
               )}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
     </div>
@@ -173,14 +203,15 @@ function HistoryTable({
   title,
   icon,
   history,
-  showMessage,
+  showAction,
 }: {
   title: string
   icon: React.ReactNode
   history: ReturnType<typeof useHealthCheckHistory>
-  showMessage: boolean
+  showAction: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const colSpan = showAction ? 6 : 5
 
   return (
     <div className="overflow-hidden rounded-lg border border-drac-current bg-drac-darker">
@@ -209,10 +240,11 @@ function HistoryTable({
             <thead>
               <tr className="border-b border-drac-current bg-drac-current/30">
                 <th className="px-4 py-2 text-left font-medium text-drac-comment">Name</th>
+                <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Type</th>
                 <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Category</th>
                 <th className="px-4 py-2 text-right font-medium text-drac-comment">Reads</th>
-                {showMessage && (
-                  <th className="hidden px-4 py-2 text-left font-medium text-drac-comment md:table-cell">Message</th>
+                {showAction && (
+                  <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Action</th>
                 )}
                 <th className="px-4 py-2 text-right font-medium text-drac-comment">Archived</th>
               </tr>
@@ -220,21 +252,24 @@ function HistoryTable({
             <tbody className="divide-y divide-drac-current">
               {history.loading ? (
                 <tr>
-                  <td colSpan={showMessage ? 5 : 4} className="px-4 py-6 text-center">
+                  <td colSpan={colSpan} className="px-4 py-6 text-center">
                     <Spinner />
                   </td>
                 </tr>
               ) : history.items.length === 0 ? (
                 <tr>
-                  <td colSpan={showMessage ? 5 : 4} className="px-4 py-6 text-center text-sm text-drac-comment">
+                  <td colSpan={colSpan} className="px-4 py-6 text-center text-sm text-drac-comment">
                     {history.search ? 'No matching items' : 'No archived items'}
                   </td>
                 </tr>
               ) : (
                 history.items.map(item => (
-                  <tr key={item.msgId} className="hover:bg-drac-current/20 transition-colors">
+                  <tr key={`${item.type}-${item.msgId}`} className="hover:bg-drac-current/20 transition-colors">
                     <td className="max-w-xs px-4 py-3">
-                      <p className="truncate text-drac-fg">{item.nzbName ?? `Doc #${item.nzbDocumentId}`}</p>
+                      <p className="truncate text-drac-fg">{item.name ?? `#${item.documentId}`}</p>
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      <TypeBadge type={item.type} />
                     </td>
                     <td className="hidden px-4 py-3 text-xs text-drac-comment/60 sm:table-cell">
                       {item.category ?? '\u2014'}
@@ -242,9 +277,9 @@ function HistoryTable({
                     <td className="px-4 py-3 text-right text-xs text-drac-comment/60">
                       {item.readCount}
                     </td>
-                    {showMessage && (
-                      <td className="hidden max-w-xs px-4 py-3 md:table-cell">
-                        <p className="truncate text-xs text-drac-orange">{item.message ?? '\u2014'}</p>
+                    {showAction && (
+                      <td className="hidden px-4 py-3 sm:table-cell">
+                        <ActionBadge action={item.action} />
                       </td>
                     )}
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-drac-comment/60">
@@ -285,13 +320,12 @@ export function HealthQueuePanel() {
           title="Pending Health Checks"
           icon={<HeartPulse className="h-4 w-4 text-drac-green" />}
           items={healthCheck.status?.pending ?? []}
-          showMessage={false}
         />
         <HistoryTable
           title="Health Check History"
           icon={<HeartPulse className="h-4 w-4 text-drac-comment" />}
           history={healthCheckHistory}
-          showMessage={false}
+          showAction={false}
         />
       </div>
 
@@ -304,13 +338,12 @@ export function HealthQueuePanel() {
           title="Pending Repairs"
           icon={<Wrench className="h-4 w-4 text-drac-orange" />}
           items={repair.status?.pending ?? []}
-          showMessage={true}
         />
         <HistoryTable
           title="Repair History"
           icon={<Wrench className="h-4 w-4 text-drac-comment" />}
           history={repairHistory}
-          showMessage={true}
+          showAction={true}
         />
       </div>
     </div>

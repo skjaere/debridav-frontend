@@ -11,6 +11,7 @@ import { NntpConfigPage } from '../pages/config/NntpConfigPage'
 import { FileBrowser } from '../pages/FileBrowser'
 import { UsenetPage } from '../pages/UsenetPage'
 import { TorrentsPage } from '../pages/TorrentsPage'
+import { HealthPage } from '../pages/HealthPage'
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'files', element: <FileBrowser /> },
       { path: 'usenet', element: <UsenetPage /> },
       { path: 'torrents', element: <TorrentsPage /> },
+      { path: 'health', element: <HealthPage /> },
       { path: 'config/core', element: <CoreConfigPage /> },
       { path: 'config/webdav', element: <WebdavConfigPage /> },
       { path: 'config/providers', element: <ProvidersConfigPage /> },

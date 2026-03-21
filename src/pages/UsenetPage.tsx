@@ -2,15 +2,13 @@ import { useState } from 'react'
 import { Newspaper } from 'lucide-react'
 import { QueuePanel } from './QueuePage'
 import { NzbUploadForm } from '../components/usenet/NzbUploadForm'
-import { HealthQueuePanel } from './HealthQueuePanel'
 
-type Tab = 'queue' | 'upload' | 'health'
+type Tab = 'queue' | 'upload'
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'upload', label: 'Upload' },
     { key: 'queue', label: 'Queue' },
-    { key: 'health', label: 'Health' },
   ]
 
   return (
@@ -53,8 +51,6 @@ export function UsenetPage() {
 
       {activeTab === 'queue' ? (
         <QueuePanel />
-      ) : activeTab === 'health' ? (
-        <HealthQueuePanel />
       ) : (
         <NzbUploadForm onSuccess={() => setActiveTab('queue')} />
       )}
