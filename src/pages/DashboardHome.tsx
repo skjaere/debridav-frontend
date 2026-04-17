@@ -1,16 +1,9 @@
 import { useState } from 'react'
-
-const GRAFANA_BASE = 'http://grafana.home.arpa'
-
-const GRAFANA_DASHBOARDS = [
-  { label: 'Platform', path: '/d/f6415a14-af35-4d81-8efb-9a018b0e3ed3/debridav3a-platform' },
-  { label: 'Kubernetes', path: '/d/kubernetes-dashboard/kubernetes-cluster' },
-  { label: 'Plex', path: '/d/plex-dashboard/plex-media-server' },
-  { label: 'Rclone', path: '/d/rclone-mounts-dashboard/rclone-mounts' },
-  { label: 'Sonarr & Radarr', path: '/d/scraparr-dashboard/sonarr-and-radarr' },
-]
+import { useUiConfig } from '../hooks/useUiConfig'
+import { Spinner } from '../components/ui/Spinner'
 
 export function DashboardHome() {
+  const { config, loading, error } = useUiConfig()
   const [activeTab, setActiveTab] = useState(0)
 
   return (
@@ -20,29 +13,91 @@ export function DashboardHome() {
         <p className="text-sm text-drac-comment">Monitoring overview</p>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 flex gap-1 border-b border-drac-current">
-          {GRAFANA_DASHBOARDS.map((dashboard, i) => (
-            <button
-              key={dashboard.path}
-              onClick={() => setActiveTab(i)}
-              className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer
-                ${activeTab === i
-                  ? 'border-b-2 border-drac-cyan text-drac-cyan'
-                  : 'text-drac-comment hover:text-drac-fg'
-                }`}
-            >
-              {dashboard.label}
-            </button>
-          ))}
+      {loading && (
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner />
         </div>
-        <div className="mt-3 flex-1 rounded-lg border border-drac-current overflow-hidden">
-          <iframe
-            src={`${GRAFANA_BASE}${GRAFANA_DASHBOARDS[activeTab].path}?orgId=1&kiosk`}
-            className="h-full w-full border-0"
-            title={GRAFANA_DASHBOARDS[activeTab].label}
-          />
+      )}
+
+      {!loading && error && (
+        <div className="flex flex-1 items-center justify-center text-sm text-drac-red">
+          {error}
         </div>
+      )}
+
+      {!loading && !error && !config?.grafana && <GrafanaNotConfigured />}
+
+      {!loading && !error && config?.grafana && (
+        <GrafanaDashboards
+          grafana={config.grafana}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+      )}
+    </div>
+  )
+}
+
+function GrafanaNotConfigured() {
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <div className="max-w-md rounded-lg border border-drac-current bg-drac-bg/40 p-6 text-center">
+        <h2 className="text-lg font-semibold text-drac-fg">Grafana not configured</h2>
+        <p className="mt-2 text-sm text-drac-comment">
+          To see dashboards here, deploy the monitoring stack (e.g. with
+          <code className="mx-1 rounded bg-drac-current px-1 py-0.5 text-drac-cyan">
+            docker-compose.monitoring.yml
+          </code>
+          ) and set <code className="mx-1 rounded bg-drac-current px-1 py-0.5 text-drac-cyan">
+            DEBRIDAV_UI_GRAFANA_BASEURL
+          </code> plus the dashboard list.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+interface GrafanaDashboardsProps {
+  grafana: NonNullable<ReturnType<typeof useUiConfig>['config']>['grafana']
+  activeTab: number
+  onTabChange: (i: number) => void
+}
+
+function GrafanaDashboards({ grafana, activeTab, onTabChange }: GrafanaDashboardsProps) {
+  if (!grafana || grafana.dashboards.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-drac-comment">
+        No dashboards configured.
+      </div>
+    )
+  }
+
+  const safeTab = Math.min(activeTab, grafana.dashboards.length - 1)
+  const current = grafana.dashboards[safeTab]
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 flex gap-1 border-b border-drac-current">
+        {grafana.dashboards.map((dashboard, i) => (
+          <button
+            key={dashboard.path}
+            onClick={() => onTabChange(i)}
+            className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer
+              ${safeTab === i
+                ? 'border-b-2 border-drac-cyan text-drac-cyan'
+                : 'text-drac-comment hover:text-drac-fg'
+              }`}
+          >
+            {dashboard.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 flex-1 rounded-lg border border-drac-current overflow-hidden">
+        <iframe
+          src={`${grafana.baseUrl}${current.path}?orgId=1&kiosk`}
+          className="h-full w-full border-0"
+          title={current.label}
+        />
       </div>
     </div>
   )
