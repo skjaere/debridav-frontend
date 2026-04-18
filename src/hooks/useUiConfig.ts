@@ -13,6 +13,7 @@ export interface GrafanaConfig {
 
 export interface UiConfig {
   grafana: GrafanaConfig | null
+  version: string | null
 }
 
 export function useUiConfig() {
