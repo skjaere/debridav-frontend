@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useUiConfig } from '../hooks/useUiConfig'
 import { Spinner } from '../components/ui/Spinner'
+import { OverviewCards } from '../components/OverviewCards'
 
 export function DashboardHome() {
   const { config, loading, error } = useUiConfig()
@@ -25,7 +26,7 @@ export function DashboardHome() {
         </div>
       )}
 
-      {!loading && !error && !config?.grafana && <GrafanaNotConfigured />}
+      {!loading && !error && !config?.grafana && <OverviewCards />}
 
       {!loading && !error && config?.grafana && (
         <GrafanaDashboards
@@ -34,25 +35,6 @@ export function DashboardHome() {
           onTabChange={setActiveTab}
         />
       )}
-    </div>
-  )
-}
-
-function GrafanaNotConfigured() {
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <div className="max-w-md rounded-lg border border-drac-current bg-drac-bg/40 p-6 text-center">
-        <h2 className="text-lg font-semibold text-drac-fg">Grafana not configured</h2>
-        <p className="mt-2 text-sm text-drac-comment">
-          To see dashboards here, deploy the monitoring stack (e.g. with
-          <code className="mx-1 rounded bg-drac-current px-1 py-0.5 text-drac-cyan">
-            docker-compose.monitoring.yml
-          </code>
-          ) and set <code className="mx-1 rounded bg-drac-current px-1 py-0.5 text-drac-cyan">
-            DEBRIDAV_UI_GRAFANA_BASEURL
-          </code> plus the dashboard list.
-        </p>
-      </div>
     </div>
   )
 }
