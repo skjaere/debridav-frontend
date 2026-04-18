@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import {
   ListOrdered,
   Loader,
@@ -422,6 +422,17 @@ export function QueuePanel() {
   const [dateSortDir, setDateSortDir] = useState<SortDir>('desc')
   const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null)
   const toggleSort = () => setDateSortDir(d => d === 'asc' ? 'desc' : 'asc')
+
+  // Refresh history whenever an item leaves the processing list — it just
+  // finished (success or failure) and now lives in history.
+  const prevProcessingIds = useRef<Set<string | number>>(new Set())
+  useEffect(() => {
+    if (!queue) return
+    const currentIds = new Set<string | number>(queue.processing.map(i => i.id))
+    const disappeared = [...prevProcessingIds.current].some(id => !currentIds.has(id))
+    if (disappeared) history.refresh()
+    prevProcessingIds.current = currentIds
+  }, [queue, history])
 
   if (loading) return <Spinner />
   if (error) return <div className="rounded-lg bg-drac-red/10 px-4 py-3 text-sm text-drac-red">{error}</div>

@@ -56,6 +56,10 @@ export function useUsenetHistory() {
     fetchPage(p, debouncedSearch, sortField, sortDir)
   }, [debouncedSearch, sortField, sortDir, fetchPage])
 
+  const refresh = useCallback(() => {
+    fetchPage(page, debouncedSearch, sortField, sortDir)
+  }, [page, debouncedSearch, sortField, sortDir, fetchPage])
+
   const toggleSort = useCallback((field: SortField) => {
     if (field === sortField) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -70,6 +74,6 @@ export function useUsenetHistory() {
     search, setSearch,
     page, totalElements, totalPages,
     sortField, sortDir, toggleSort,
-    goToPage,
+    goToPage, refresh,
   }
 }
