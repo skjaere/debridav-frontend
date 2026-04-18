@@ -38,15 +38,7 @@ export function OverviewCards() {
 
   return (
     <div className="grid flex-1 gap-4 content-start auto-rows-min grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard
-        icon={<Activity className="h-4 w-4" />}
-        label="Active streams"
-        primary={summary.activeStreams.count === 0
-          ? 'Idle'
-          : `${summary.activeStreams.count} stream${summary.activeStreams.count === 1 ? '' : 's'}`}
-        secondary={summary.activeStreams.count > 0 ? formatBitrate(summary.activeStreams.bitrateBytesPerSec) : undefined}
-        accent={summary.activeStreams.count > 0 ? 'cyan' : 'comment'}
-      />
+      <ActiveStreamsCard summary={summary} />
 
       <LibraryCard summary={summary} />
 
@@ -80,6 +72,58 @@ export function OverviewCards() {
       />
     </div>
   )
+}
+
+function ActiveStreamsCard({ summary }: { summary: Summary }) {
+  const { count, bitrateBytesPerSec, streams } = summary.activeStreams
+  const isIdle = count === 0
+
+  return (
+    <Card className={isIdle ? '' : 'sm:col-span-2 lg:col-span-3'}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-drac-comment">
+          <Activity className={`h-4 w-4 ${isIdle ? 'text-drac-comment' : 'text-drac-cyan'}`} />
+          <span>Active streams</span>
+        </div>
+        {!isIdle && (
+          <div className="text-sm text-drac-comment">
+            <span className="font-medium text-drac-fg">{count}</span>{' '}
+            · <span className="font-mono text-drac-cyan">{formatBitrate(bitrateBytesPerSec)}</span>
+          </div>
+        )}
+      </div>
+
+      {isIdle ? (
+        <div className="mt-2 text-2xl font-semibold text-drac-comment">Idle</div>
+      ) : (
+        <ul className="mt-3 divide-y divide-drac-current/40 max-h-64 overflow-y-auto">
+          {streams.map((s, i) => (
+            <li key={`${s.source}-${s.name}-${i}`} className="flex items-center gap-3 py-2">
+              <span
+                className="flex-1 truncate text-sm text-drac-fg"
+                title={s.name}
+              >
+                {formatStreamName(s.name)}
+              </span>
+              <span className="shrink-0 rounded bg-drac-current/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-drac-comment">
+                {s.source}
+              </span>
+              <span className="shrink-0 font-mono text-xs text-drac-cyan tabular-nums">
+                {formatBitrate(s.bitrateBytesPerSec)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  )
+}
+
+/** Show just the file's basename when the label is a long path. */
+function formatStreamName(name: string): string {
+  if (!name) return '(unknown)'
+  const lastSlash = name.lastIndexOf('/')
+  return lastSlash === -1 ? name : name.substring(lastSlash + 1)
 }
 
 function LibraryCard({ summary }: { summary: Summary }) {

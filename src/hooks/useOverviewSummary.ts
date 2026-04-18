@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiFetch } from '../lib/api'
 
+export interface Stream {
+  name: string
+  source: string
+  bitrateBytesPerSec: number
+}
+
 export interface ActiveStreams {
   count: number
   bitrateBytesPerSec: number
+  streams: Stream[]
 }
 
 export interface LibrarySource {
