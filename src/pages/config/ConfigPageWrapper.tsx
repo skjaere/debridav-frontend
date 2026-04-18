@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { ConfigGroupPage } from '../../components/config/ConfigGroupPage'
 import { DebridClientsEditor } from '../../components/config/DebridClientsEditor'
 import { NntpPoolEditor } from '../../components/config/NntpPoolEditor'
@@ -72,7 +73,9 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
   const { properties: allProperties, getByGroup, loading, updateProperty, resetProperty } = useConfig()
   const { isTestable, testingPrefix, testPrefix } = useConfigTest()
   const { pools, saving: poolsSaving, savePools, testPool } = useNntpPools()
-  const [nntpTab, setNntpTab] = useState<NntpTab>('general')
+  const [searchParams] = useSearchParams()
+  const initialNntpTab: NntpTab = searchParams.get('tab') === 'pools' ? 'pools' : 'general'
+  const [nntpTab, setNntpTab] = useState<NntpTab>(initialNntpTab)
   const [subgroupTab, setSubgroupTab] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const group = CONFIG_GROUPS.find(g => g.key === groupKey)!

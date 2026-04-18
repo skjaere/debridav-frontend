@@ -91,7 +91,7 @@ function NoPoolConfigured() {
         NZB uploads need a Usenet server to fetch articles from. Add at least one pool to enable this feature.
       </p>
       <Link
-        to="/config/nntp"
+        to="/config/nntp?tab=pools"
         className="mt-4 inline-flex items-center gap-2 rounded-md bg-drac-cyan/15 px-4 py-2 text-sm font-medium text-drac-cyan hover:bg-drac-cyan/25 transition-colors"
       >
         Configure a pool →
