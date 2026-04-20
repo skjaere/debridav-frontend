@@ -77,21 +77,23 @@ function GrafanaDashboards({ baseUrl, activeTab, onTabChange }: GrafanaDashboard
   const current = dashboards[safeTab]
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 flex gap-1 border-b border-drac-current overflow-x-auto">
-        {dashboards.map((dashboard, i) => (
-          <button
-            key={dashboard.path}
-            onClick={() => onTabChange(i)}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors cursor-pointer
-              ${safeTab === i
-                ? 'border-b-2 border-drac-cyan text-drac-cyan'
-                : 'text-drac-comment hover:text-drac-fg'
-              }`}
-          >
-            {dashboard.label}
-          </button>
-        ))}
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="shrink-0 w-full overflow-x-auto border-b border-drac-current">
+        <div className="flex gap-1 whitespace-nowrap">
+          {dashboards.map((dashboard, i) => (
+            <button
+              key={dashboard.path}
+              onClick={() => onTabChange(i)}
+              className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer
+                ${safeTab === i
+                  ? 'border-b-2 border-drac-cyan text-drac-cyan'
+                  : 'text-drac-comment hover:text-drac-fg'
+                }`}
+            >
+              {dashboard.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="mt-3 flex-1 rounded-lg border border-drac-current overflow-hidden">
         <iframe
