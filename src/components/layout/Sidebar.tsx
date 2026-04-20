@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { LayoutDashboard, FolderOpen, Newspaper, Magnet, HeartPulse, Github } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Newspaper, Magnet, HeartPulse, ScrollText, Github } from 'lucide-react'
 import { CONFIG_GROUPS } from '../../lib/constants'
 import { useUiConfig } from '../../hooks/useUiConfig'
 
@@ -52,6 +52,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <NavLink to="/health" className={linkClass} onClick={onNavigate}>
           <HeartPulse className="h-4 w-4" />
           Health
+        </NavLink>
+
+        <NavLink to="/logs" className={linkClass} onClick={onNavigate}>
+          <ScrollText className="h-4 w-4" />
+          Logs
         </NavLink>
 
         <div className="pb-1 pt-4">

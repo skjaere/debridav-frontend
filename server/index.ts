@@ -58,6 +58,25 @@ app.use(
   })
 )
 
+app.use(
+  createProxyMiddleware({
+    target: API_TARGET,
+    changeOrigin: true,
+    pathFilter: '/actuator',
+    timeout: 0,
+    proxyTimeout: 0,
+    on: {
+      error: (err, _req, res) => {
+        console.error('Actuator proxy error:', err.message)
+        if ('writeHead' in res && !res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'text/plain' })
+        }
+        res.end('Bad Gateway')
+      },
+    },
+  })
+)
+
 app.use(express.static(path.join(__dirname, '..', 'dist')))
 
 app.get('/{*path}', (_req, res) => {
