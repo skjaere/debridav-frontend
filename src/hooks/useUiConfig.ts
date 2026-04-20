@@ -8,7 +8,6 @@ export interface GrafanaDashboard {
 
 export interface GrafanaConfig {
   baseUrl: string
-  dashboards: GrafanaDashboard[]
 }
 
 export interface UiConfig {
