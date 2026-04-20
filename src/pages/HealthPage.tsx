@@ -8,13 +8,15 @@ import type { GroupMeta } from '../lib/constants'
 
 type Tab = 'queue' | 'settings'
 
-const REPAIR_GROUP: GroupMeta = {
-  key: 'repair',
-  label: 'Repair',
+const HEALTH_CHECK_GROUP: GroupMeta = {
+  key: 'health-check',
+  label: 'Health Check',
   path: '/health',
   icon: HeartPulse,
-  description: 'Repair settings',
+  description: 'Health check and repair settings',
 }
+
+const REPAIR_ENABLED_KEY = 'health-check.repair-enabled'
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { key: Tab; label: string }[] = [
@@ -43,16 +45,21 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
   )
 }
 
-function RepairSettings() {
+function HealthCheckSettings() {
   const { getByGroup, loading, updateProperty, resetProperty } = useConfig()
-  const properties = getByGroup('repair')
+  const properties = getByGroup('health-check')
 
   if (loading) return <Spinner />
 
+  const ordered = [
+    ...properties.filter(p => p.key === REPAIR_ENABLED_KEY),
+    ...properties.filter(p => p.key !== REPAIR_ENABLED_KEY),
+  ]
+
   return (
     <ConfigGroupPage
-      group={REPAIR_GROUP}
-      properties={properties}
+      group={HEALTH_CHECK_GROUP}
+      properties={ordered}
       loading={false}
       onSave={updateProperty}
       onReset={resetProperty}
@@ -81,7 +88,7 @@ export function HealthPage() {
       {activeTab === 'queue' ? (
         <HealthQueuePanel />
       ) : (
-        <RepairSettings />
+        <HealthCheckSettings />
       )}
     </div>
   )
