@@ -242,9 +242,9 @@ function HistoryTable({
                 <th className="px-4 py-2 text-left font-medium text-drac-comment">Name</th>
                 <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Type</th>
                 <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Category</th>
-                <th className="px-4 py-2 text-right font-medium text-drac-comment">Reads</th>
+                <th className={`${showAction ? 'hidden sm:table-cell ' : ''}px-4 py-2 text-right font-medium text-drac-comment`}>Reads</th>
                 {showAction && (
-                  <th className="hidden px-4 py-2 text-left font-medium text-drac-comment sm:table-cell">Action</th>
+                  <th className="px-4 py-2 text-left font-medium text-drac-comment">Result</th>
                 )}
                 <th className="px-4 py-2 text-right font-medium text-drac-comment">Archived</th>
               </tr>
@@ -274,11 +274,11 @@ function HistoryTable({
                     <td className="hidden px-4 py-3 text-xs text-drac-comment/60 sm:table-cell">
                       {item.category ?? '\u2014'}
                     </td>
-                    <td className="px-4 py-3 text-right text-xs text-drac-comment/60">
+                    <td className={`${showAction ? 'hidden sm:table-cell ' : ''}px-4 py-3 text-right text-xs text-drac-comment/60`}>
                       {item.readCount}
                     </td>
                     {showAction && (
-                      <td className="hidden px-4 py-3 sm:table-cell">
+                      <td className="px-4 py-3">
                         <ActionBadge action={item.action} />
                       </td>
                     )}
