@@ -86,21 +86,21 @@ function SortablePoolCard({
       style={style}
       className="rounded-lg border border-drac-current/50 bg-drac-bg p-4 space-y-3"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
-            className="cursor-grab touch-none text-drac-comment hover:text-drac-fg transition-colors"
+            className="shrink-0 cursor-grab touch-none text-drac-comment hover:text-drac-fg transition-colors"
             {...attributes}
             {...listeners}
           >
             <GripVertical className="h-4 w-4" />
           </button>
-          <span className="text-sm font-medium text-drac-fg">
+          <span className="truncate text-sm font-medium text-drac-fg">
             Pool {index + 1}{pool.host ? ` — ${pool.host}` : ''}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
           <Button
             size="sm"
             variant="ghost"
