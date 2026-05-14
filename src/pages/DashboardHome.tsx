@@ -27,11 +27,9 @@ export function DashboardHome() {
         </div>
       )}
 
-      {!loading && !error && !config?.grafana && <OverviewCards />}
-
-      {!loading && !error && config?.grafana && (
-        <GrafanaDashboards
-          baseUrl={config.grafana.baseUrl}
+      {!loading && !error && (
+        <DashboardTabs
+          grafanaBaseUrl={config?.grafana?.baseUrl ?? null}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -40,16 +38,26 @@ export function DashboardHome() {
   )
 }
 
-interface GrafanaDashboardsProps {
-  baseUrl: string
+interface DashboardTabsProps {
+  grafanaBaseUrl: string | null
   activeTab: number
   onTabChange: (i: number) => void
 }
 
-function GrafanaDashboards({ baseUrl, activeTab, onTabChange }: GrafanaDashboardsProps) {
-  const { dashboards, loading, error } = useGrafanaDashboards(true)
+const OVERVIEW_TAB = { label: 'Overview', kind: 'overview' as const }
 
-  if (loading) {
+/**
+ * Single tabbed view: "Overview" is always tab 0 (showing [OverviewCards]); each
+ * Grafana dashboard registered under the `debridav` folder is appended as an
+ * additional tab. If Grafana isn't enabled (or returns no dashboards), the tab
+ * bar collapses to just Overview and the bar itself is hidden — there's no point
+ * showing a single-tab strip.
+ */
+function DashboardTabs({ grafanaBaseUrl, activeTab, onTabChange }: DashboardTabsProps) {
+  const grafanaEnabled = grafanaBaseUrl !== null
+  const { dashboards, loading, error } = useGrafanaDashboards(grafanaEnabled)
+
+  if (grafanaEnabled && loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Spinner />
@@ -57,7 +65,7 @@ function GrafanaDashboards({ baseUrl, activeTab, onTabChange }: GrafanaDashboard
     )
   }
 
-  if (error) {
+  if (grafanaEnabled && error) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-drac-red">
         {error}
@@ -65,42 +73,48 @@ function GrafanaDashboards({ baseUrl, activeTab, onTabChange }: GrafanaDashboard
     )
   }
 
-  if (dashboards.length === 0) {
-    return (
-      <div className="flex flex-1 items-center justify-center px-4 text-center text-sm text-drac-comment">
-        No dashboards found in the <code className="mx-1 rounded bg-drac-current px-1">debridav</code> folder.
-      </div>
-    )
-  }
-
-  const safeTab = Math.min(activeTab, dashboards.length - 1)
-  const current = dashboards[safeTab]
+  const tabs = [
+    OVERVIEW_TAB,
+    ...(grafanaEnabled
+      ? dashboards.map((d) => ({ label: d.label, kind: 'grafana' as const, path: d.path }))
+      : []),
+  ]
+  const safeTab = Math.min(Math.max(activeTab, 0), tabs.length - 1)
+  const current = tabs[safeTab]
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0 w-full overflow-x-auto border-b border-drac-current">
-        <div className="flex gap-1 whitespace-nowrap">
-          {dashboards.map((dashboard, i) => (
-            <button
-              key={dashboard.path}
-              onClick={() => onTabChange(i)}
-              className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer
-                ${safeTab === i
-                  ? 'border-b-2 border-drac-cyan text-drac-cyan'
-                  : 'text-drac-comment hover:text-drac-fg'
-                }`}
-            >
-              {dashboard.label}
-            </button>
-          ))}
+      {tabs.length > 1 && (
+        <div className="shrink-0 w-full overflow-x-auto border-b border-drac-current">
+          <div className="flex gap-1 whitespace-nowrap">
+            {tabs.map((tab, i) => (
+              <button
+                key={`${tab.kind}-${i}`}
+                onClick={() => onTabChange(i)}
+                className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer
+                  ${safeTab === i
+                    ? 'border-b-2 border-drac-cyan text-drac-cyan'
+                    : 'text-drac-comment hover:text-drac-fg'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="mt-3 flex-1 rounded-lg border border-drac-current overflow-hidden">
-        <iframe
-          src={`${baseUrl}${current.path}?orgId=1&kiosk`}
-          className="h-full w-full border-0"
-          title={current.label}
-        />
+      )}
+      <div className={`flex min-h-0 min-w-0 flex-1 flex-col ${tabs.length > 1 ? 'mt-3' : ''}`}>
+        {current.kind === 'overview' ? (
+          <OverviewCards />
+        ) : (
+          <div className="flex-1 rounded-lg border border-drac-current overflow-hidden">
+            <iframe
+              src={`${grafanaBaseUrl}${current.path}?orgId=1&kiosk`}
+              className="h-full w-full border-0"
+              title={current.label}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
