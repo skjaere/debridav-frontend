@@ -4,6 +4,7 @@ import {
   Cloud,
   Tv,
   Newspaper,
+  RefreshCw,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -78,5 +79,12 @@ export const CONFIG_GROUPS: GroupMeta[] = [
     path: '/config/nntp',
     icon: Newspaper,
     description: 'Usenet/NNTP server configuration',
+  },
+  {
+    key: 'rclone',
+    label: 'Rclone',
+    path: '/config/rclone',
+    icon: RefreshCw,
+    description: 'Rclone remote-control endpoint used to invalidate its directory cache when files change',
   },
 ]

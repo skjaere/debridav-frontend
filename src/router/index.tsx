@@ -8,6 +8,7 @@ import { WebdavConfigPage } from '../pages/config/WebdavConfigPage'
 import { ProvidersConfigPage } from '../pages/config/ProvidersConfigPage'
 import { ArrsConfigPage } from '../pages/config/ArrsConfigPage'
 import { NntpConfigPage } from '../pages/config/NntpConfigPage'
+import { RcloneConfigPage } from '../pages/config/RcloneConfigPage'
 import { FileBrowser } from '../pages/FileBrowser'
 import { UsenetPage } from '../pages/UsenetPage'
 import { TorrentsPage } from '../pages/TorrentsPage'
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: 'config/providers', element: <ProvidersConfigPage /> },
       { path: 'config/arrs', element: <ArrsConfigPage /> },
       { path: 'config/nntp', element: <NntpConfigPage /> },
+      { path: 'config/rclone', element: <RcloneConfigPage /> },
     ],
   },
 ])
