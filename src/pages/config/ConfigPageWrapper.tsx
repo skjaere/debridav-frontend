@@ -15,7 +15,9 @@ interface ConfigPageWrapperProps {
   groupKey: string
 }
 
-type NntpTab = 'general' | 'pools'
+type NntpTab = 'general' | 'pools' | 'cache'
+
+const NNTP_CACHE_KEY_PREFIX = 'nntp.cache.'
 
 function TabbedHeader({ group }: { group: GroupMeta }) {
   const Icon = group.icon
@@ -74,7 +76,11 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
   const { isTestable, testingPrefix, testPrefix } = useConfigTest()
   const { pools, saving: poolsSaving, savePools, testPool } = useNntpPools()
   const [searchParams] = useSearchParams()
-  const initialNntpTab: NntpTab = searchParams.get('tab') === 'pools' ? 'pools' : 'general'
+  const tabParam = searchParams.get('tab')
+  const initialNntpTab: NntpTab =
+    tabParam === 'pools' ? 'pools' :
+    tabParam === 'cache' ? 'cache' :
+    'general'
   const [nntpTab, setNntpTab] = useState<NntpTab>(initialNntpTab)
   const [subgroupTab, setSubgroupTab] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -83,7 +89,11 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
 
   if (groupKey === 'nntp') {
     if (loading) return <Spinner />
-    const hasAdvanced = properties.some(p => p.advanced)
+    // Cache properties (nntp.cache.*) share the `nntp` server-side group but render on
+    // their own tab. The General tab shows everything that isn't a cache property.
+    const cacheProperties = properties.filter(p => p.key.startsWith(NNTP_CACHE_KEY_PREFIX))
+    const generalProperties = properties.filter(p => !p.key.startsWith(NNTP_CACHE_KEY_PREFIX))
+    const hasAdvancedGeneral = generalProperties.some(p => p.advanced)
 
     return (
       <div className="max-w-4xl space-y-6">
@@ -92,17 +102,18 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
           tabs={[
             { key: 'general' as NntpTab, label: 'General' },
             { key: 'pools' as NntpTab, label: 'Server Pools' },
+            { key: 'cache' as NntpTab, label: 'Cache' },
           ]}
           active={nntpTab}
           onChange={setNntpTab}
-          trailing={nntpTab === 'general' && hasAdvanced
+          trailing={nntpTab === 'general' && hasAdvancedGeneral
             ? <AdvancedToggle show={showAdvanced} onChange={setShowAdvanced} />
             : undefined}
         />
-        {nntpTab === 'general' ? (
+        {nntpTab === 'general' && (
           <ConfigGroupPage
             group={group}
-            properties={properties}
+            properties={generalProperties}
             loading={false}
             onSave={updateProperty}
             onReset={resetProperty}
@@ -113,8 +124,19 @@ export function ConfigPageWrapper({ groupKey }: ConfigPageWrapperProps) {
             showAdvanced={showAdvanced}
             onShowAdvancedChange={setShowAdvanced}
           />
-        ) : (
+        )}
+        {nntpTab === 'pools' && (
           <NntpPoolEditor pools={pools} saving={poolsSaving} onSave={savePools} onTestPool={testPool} />
+        )}
+        {nntpTab === 'cache' && (
+          <ConfigGroupPage
+            group={group}
+            properties={cacheProperties}
+            loading={false}
+            onSave={updateProperty}
+            onReset={resetProperty}
+            hideHeader
+          />
         )}
       </div>
     )
